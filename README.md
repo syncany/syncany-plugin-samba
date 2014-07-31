@@ -1,6 +1,6 @@
-Syncany SFTP Plugin
+Syncany Samba Plugin
 -------------------
-This plugin uses an **SFTP folder** as a storage backend for [Syncany](http://www.syncany.org). The plugin can be installed in Syncany using the `sy plugin install` command. For further information about the usage, please refer to the central **[wiki page](https://github.com/binwiederhier/syncany/wiki)**.
+This plugin uses an **Samba share** and if wanted a subfolder as a storage backend for [Syncany](http://www.syncany.org). The plugin can be installed in Syncany using the `sy plugin install` command. For further information about the usage, please refer to the central **[wiki page](https://github.com/syncany/syncany/wiki)**.
 
-For plugin development, please refer to the [plugin development wiki page](https://github.com/binwiederhier/syncany/wiki/Plugin-development).
+For plugin development, please refer to the [plugin development wiki page](https://github.com/syncany/syncany/wiki/Plugin-development).
 	
