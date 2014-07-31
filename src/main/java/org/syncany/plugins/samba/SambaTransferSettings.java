@@ -96,8 +96,8 @@ public class SambaTransferSettings extends TransferSettings {
       new PluginOptionSpec("hostname", "Hostname", ValueType.STRING, true, false, null),
       new PluginOptionSpec("username", "Username", ValueType.STRING, true, false, null),
       new PluginOptionSpec("password", "Password", ValueType.STRING, true, true, null),
-      new PluginOptionSpec("share", "share", ValueType.STRING, true, false, null),
-      new PluginOptionSpec("path", "path", ValueType.STRING, false, false, "/")
+      new PluginOptionSpec("share", "Share", ValueType.STRING, true, false, null),
+      new PluginOptionSpec("path", "Path", ValueType.STRING, false, false, "/")
     );
   }
 
@@ -105,6 +105,7 @@ public class SambaTransferSettings extends TransferSettings {
   public String toString() {
     return Objects.toStringHelper(this.getClass())
       .add("hostname", hostname)
+      .add("share", share)
       .add("path", path)
       .add("username", username)
       .add("password", password != null ? "<hidden>" : "none")
