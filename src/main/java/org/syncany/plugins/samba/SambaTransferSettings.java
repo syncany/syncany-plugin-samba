@@ -34,81 +34,81 @@ import java.util.Map;
  * @author Christian Roth <christian.roth@port17.de>
  */
 public class SambaTransferSettings extends TransferSettings {
-  private String hostname;
-  private String username;
-  private String password;
-  private String share;
-  private String path;
+	private String hostname;
+	private String username;
+	private String password;
+	private String share;
+	private String path;
 
-  public String getHostname() {
-    return hostname;
-  }
+	public String getHostname() {
+		return hostname;
+	}
 
-  public void setHostname(String hostname) {
-    this.hostname = hostname;
-  }
+	public void setHostname(String hostname) {
+		this.hostname = hostname;
+	}
 
-  public String getPassword() {
-    return password;
-  }
+	public String getPassword() {
+		return password;
+	}
 
-  public void setPassword(String password) {
-    this.password = password;
-  }
+	public void setPassword(String password) {
+		this.password = password;
+	}
 
-  public String getShare() {
-    return share;
-  }
+	public String getShare() {
+		return share;
+	}
 
-  public void setShare(String share) {
-    this.share = share;
-  }
+	public void setShare(String share) {
+		this.share = share;
+	}
 
-  public String getPath() {
-    return path;
-  }
+	public String getPath() {
+		return path;
+	}
 
-  public void setPath(String path) {
-    this.path = path;
-  }
+	public void setPath(String path) {
+		this.path = path;
+	}
 
-  public String getUsername() {
-    return username;
-  }
+	public String getUsername() {
+		return username;
+	}
 
-  public void setUsername(String username) {
-    this.username = username;
-  }
+	public void setUsername(String username) {
+		this.username = username;
+	}
 
-  @Override
-  public void init(Map<String, String> optionValues) throws StorageException {
-    getOptionSpecs().validate(optionValues);
-    this.hostname = optionValues.get("hostname");
-    this.username = optionValues.get("username");
-    this.password = optionValues.get("password");
-    this.share = optionValues.get("share");
-    this.path = optionValues.get("path");
-  }
+	@Override
+	public void init(Map<String, String> optionValues) throws StorageException {
+		getOptionSpecs().validate(optionValues);
+		this.hostname = optionValues.get("hostname");
+		this.username = optionValues.get("username");
+		this.password = optionValues.get("password");
+		this.share = optionValues.get("share");
+		this.path = optionValues.get("path");
+	}
 
-  @Override
-  public PluginOptionSpecs getOptionSpecs() {
-    return new PluginOptionSpecs(
-      new PluginOptionSpec("hostname", "Hostname", ValueType.STRING, true, false, null),
-      new PluginOptionSpec("username", "Username", ValueType.STRING, true, false, null),
-      new PluginOptionSpec("password", "Password", ValueType.STRING, true, true, null),
-      new PluginOptionSpec("share", "Share", ValueType.STRING, true, false, null),
-      new PluginOptionSpec("path", "Path", ValueType.STRING, false, false, "/")
-    );
-  }
+	@Override
+	public PluginOptionSpecs getOptionSpecs() {
+		return new PluginOptionSpecs(
+			new PluginOptionSpec("hostname", "Hostname", ValueType.STRING, true, false, null),
+			new PluginOptionSpec("username", "Username", ValueType.STRING, true, false, null),
+			new PluginOptionSpec("password", "Password", ValueType.STRING, true, true, null),
+			new PluginOptionSpec("share", "Share", ValueType.STRING, true, false, null),
+			new PluginOptionSpec("path", "Path", ValueType.STRING, false, false, "/")
+		);
+	}
 
-  @Override
-  public String toString() {
-    return Objects.toStringHelper(this.getClass())
-      .add("hostname", hostname)
-      .add("share", share)
-      .add("path", path)
-      .add("username", username)
-      .add("password", password != null ? "<hidden>" : "none")
-      .toString();
-  }
+	@Override
+	public String toString() {
+		return Objects.toStringHelper(this.getClass())
+			.add("hostname", hostname)
+			.add("share", share)
+			.add("path", path)
+			.add("username", username)
+			.add("password", password != null ? "<hidden>" : "none")
+			.toString();
+	}
 }

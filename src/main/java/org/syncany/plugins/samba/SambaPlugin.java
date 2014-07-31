@@ -32,17 +32,17 @@ import org.syncany.plugins.transfer.TransferSettings;
  * @author Christian Roth <christian.roth@port17.de>
  */
 public class SambaPlugin extends TransferPlugin {
-  public SambaPlugin() {
-    super("samba");
-  }
+	public SambaPlugin() {
+		super("samba");
+	}
 
-  @Override
-  public TransferManager createTransferManager(TransferSettings connection) {
-    return new SambaTransferManager((SambaTransferSettings) connection);
-  }
+	@Override
+	public TransferManager createTransferManager(TransferSettings connection) {
+		return new SambaTransferManager((SambaTransferSettings) connection);
+	}
 
-  @Override
-  public TransferSettings createSettings() {
-    return new SambaTransferSettings();
-  }
+	@Override
+	public TransferSettings createSettings() {
+		return new SambaTransferSettings();
+	}
 }
