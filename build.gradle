@@ -9,9 +9,9 @@ configurations {
 project.ext {
 	pluginId = "samba"
 	pluginName = "Samba"
-	pluginVersion = "0.1.0-alpha"
+	pluginVersion = "0.1.8-alpha"
 	pluginDate = new Date()
-	pluginAppMinVersion = "0.1.6-alpha"
+	pluginAppMinVersion = "0.1.7-alpha"
 	pluginRelease = rootProject.ext.applicationRelease
 	pluginConflictsWith = ""
 
