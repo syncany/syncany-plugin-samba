@@ -17,14 +17,15 @@
  */
 package org.syncany.plugins.samba;
 
-import com.google.common.base.Objects;
+import java.util.Map;
+
 import org.syncany.plugins.PluginOptionSpec;
 import org.syncany.plugins.PluginOptionSpec.ValueType;
 import org.syncany.plugins.PluginOptionSpecs;
-import org.syncany.plugins.StorageException;
+import org.syncany.plugins.transfer.StorageException;
 import org.syncany.plugins.transfer.TransferSettings;
 
-import java.util.Map;
+import com.google.common.base.Objects;
 
 /**
  * The Samba connection represents the settings required to connect to an

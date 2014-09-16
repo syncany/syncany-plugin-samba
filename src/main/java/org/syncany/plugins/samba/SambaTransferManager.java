@@ -17,22 +17,41 @@
  */
 package org.syncany.plugins.samba;
 
-import jcifs.smb.*;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
-import org.syncany.plugins.StorageException;
-import org.syncany.plugins.transfer.AbstractTransferManager;
-import org.syncany.plugins.transfer.TransferManager;
-import org.syncany.plugins.transfer.files.*;
-import org.syncany.util.FileUtil;
-
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import jcifs.smb.NtlmPasswordAuthentication;
+import jcifs.smb.SmbException;
+import jcifs.smb.SmbFile;
+import jcifs.smb.SmbFileInputStream;
+import jcifs.smb.SmbFileOutputStream;
+
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
+import org.syncany.config.Config;
+import org.syncany.plugins.transfer.AbstractTransferManager;
+import org.syncany.plugins.transfer.StorageException;
+import org.syncany.plugins.transfer.StorageFileNotFoundException;
+import org.syncany.plugins.transfer.StorageMoveException;
+import org.syncany.plugins.transfer.TransferManager;
+import org.syncany.plugins.transfer.files.ActionRemoteFile;
+import org.syncany.plugins.transfer.files.DatabaseRemoteFile;
+import org.syncany.plugins.transfer.files.MultichunkRemoteFile;
+import org.syncany.plugins.transfer.files.RemoteFile;
+import org.syncany.plugins.transfer.files.SyncanyRemoteFile;
+import org.syncany.plugins.transfer.files.TempRemoteFile;
+import org.syncany.plugins.transfer.files.TransactionRemoteFile;
+import org.syncany.util.FileUtil;
 
 /**
  * Implements a {@link TransferManager} based on an Samba storage backend for the
@@ -56,21 +75,25 @@ import java.util.logging.Logger;
 public class SambaTransferManager extends AbstractTransferManager {
 	private static final Logger logger = Logger.getLogger(SambaTransferManager.class.getSimpleName());
 
-	private final NtlmPasswordAuthentication auth;
+	private NtlmPasswordAuthentication authentication;
 	private String repoPath;
 	private String multichunksPath;
 	private String databasesPath;
 	private String actionsPath;
+	private String transactionsPath;
+	private String tempPath;
 
-	public SambaTransferManager(SambaTransferSettings connection) {
-		super(connection);
+	public SambaTransferManager(SambaTransferSettings connection, Config config) {
+		super(connection, config);
 
 		this.repoPath = "smb://" + connection.getHostname() + "/" + connection.getShare();
 		this.multichunksPath = "/multichunks/";
 		this.databasesPath = "/databases/";
 		this.actionsPath = "/actions/";
-
-		this.auth = new NtlmPasswordAuthentication("", connection.getUsername(), connection.getPassword());
+		this.transactionsPath = "/transactions/";
+		this.tempPath = "/temporary/";
+		
+		this.authentication = new NtlmPasswordAuthentication("", connection.getUsername(), connection.getPassword());
 
 		if (logger.isLoggable(Level.INFO)) {
 			logger.log(Level.INFO, "Samba: RepoPath is " + repoPath);
@@ -78,18 +101,18 @@ public class SambaTransferManager extends AbstractTransferManager {
 	}
 
 	@Override
-	public SambaTransferSettings getConnection() {
-		return (SambaTransferSettings) super.getConnection();
+	public SambaTransferSettings getSettings() {
+		return (SambaTransferSettings) super.getSettings();
 	}
 
 	@Override
 	public void connect() throws StorageException {
 		// make a connect
 		try {
-			new SmbFile(repoPath, auth).exists();
+			new SmbFile(repoPath, authentication).exists();
 		}
 		catch (Exception e) {
-			throw new StorageException("Unable to connect to target at " + repoPath + "/" + getConnection().getPath(), e);
+			throw new StorageException("Unable to connect to target at " + repoPath + "/" + getSettings().getPath(), e);
 		}
 	}
 
@@ -101,14 +124,17 @@ public class SambaTransferManager extends AbstractTransferManager {
 	@Override
 	public void init(boolean createIfRequired) throws StorageException {
 		connect();
+		
 		try {
 			if (!testTargetExists() && createIfRequired) {
-				new SmbFile(repoPath + "/" + getConnection().getPath(), auth).mkdirs();
+				new SmbFile(repoPath + "/" + getSettings().getPath(), authentication).mkdirs();
 			}
 
 			createSmbFile(RemoteFile.createRemoteFile(multichunksPath, SambaRemoteFile.class)).mkdir();
 			createSmbFile(RemoteFile.createRemoteFile(databasesPath, SambaRemoteFile.class)).mkdir();
 			createSmbFile(RemoteFile.createRemoteFile(actionsPath, SambaRemoteFile.class)).mkdir();
+			createSmbFile(RemoteFile.createRemoteFile(transactionsPath, SambaRemoteFile.class)).mkdir();
+			createSmbFile(RemoteFile.createRemoteFile(tempPath, SambaRemoteFile.class)).mkdir();
 		}
 		catch (MalformedURLException | SmbException e) {
 			throw new StorageException("init: Cannot create required directories", e);
@@ -134,11 +160,17 @@ public class SambaTransferManager extends AbstractTransferManager {
 				logger.log(Level.INFO, "Samba: Downloading {0} to temp file {1}", new Object[]{requestedSmbFile.getPath(), tempFile});
 			}
 
-			SmbFileInputStream smbfis = new SmbFileInputStream(requestedSmbFile);
-			IOUtils.copy(smbfis, tempFOS);
+			try {
+				SmbFileInputStream smbfis = new SmbFileInputStream(requestedSmbFile);
+				IOUtils.copy(smbfis, tempFOS);
 
-			tempFOS.close();
-			smbfis.close();
+				tempFOS.close();
+				smbfis.close();
+			}
+			catch (IOException e) {
+				logger.log(Level.WARNING, "Samba: Downloading FAILED. {0} to temp file {1}", new Object[] { requestedSmbFile.getPath(), tempFile });
+				throw new StorageFileNotFoundException("Samba: Downloading FAILED: " + requestedSmbFile.getPath(), e);
+			}
 
 			// Move file
 			if (logger.isLoggable(Level.INFO)) {
@@ -153,7 +185,6 @@ public class SambaTransferManager extends AbstractTransferManager {
 			logger.log(Level.SEVERE, "Error while downloading file " + remoteFile.getName(), ex);
 			throw new StorageException(ex);
 		}
-
 	}
 
 	@Override
@@ -196,6 +227,24 @@ public class SambaTransferManager extends AbstractTransferManager {
 		catch (IOException ex) {
 			logger.log(Level.SEVERE, "Could not delete file " + remoteFile.getName(), ex);
 			throw new StorageException(ex);
+		}
+	}
+	
+	@Override
+	public void move(RemoteFile sourceFile, RemoteFile targetFile) throws StorageException {
+		try {
+			SmbFile sourceRemoteFile = createSmbFile(sourceFile);
+			SmbFile targetRemoteFile = createSmbFile(targetFile);
+			
+			sourceRemoteFile.renameTo(targetRemoteFile);
+		}
+		catch (SmbException e) {
+			logger.log(Level.SEVERE, "Could not rename/move file " + sourceFile + " to " + targetFile, e);
+			throw new StorageMoveException("Could not rename/move file " + sourceFile + " to " + targetFile, e);
+		}
+		catch (Exception e) {
+			logger.log(Level.SEVERE, "Invalid file name for source or target file: " + sourceFile + " to " + targetFile, e);
+			throw new StorageException("Invalid file name for source or target file: " + sourceFile + " to " + targetFile, e);
 		}
 	}
 
@@ -272,16 +321,16 @@ public class SambaTransferManager extends AbstractTransferManager {
 	@Override
 	public boolean testTargetCanCreate() {
 		// Find parent path
-		String repoPathNoSlash = FileUtil.removeTrailingSlash(getConnection().getPath());
+		String repoPathNoSlash = FileUtil.removeTrailingSlash(getSettings().getPath());
 		int repoPathLastSlash = repoPathNoSlash.lastIndexOf("/");
 		String parentPath = (repoPathLastSlash > 0) ? repoPathNoSlash.substring(0, repoPathLastSlash) : "/";
 
 		// Test parent path permissions
 		try {
-			SmbFile parentSmbFolder = new SmbFile(URI.create(repoPath + "/" + parentPath + "/").normalize().toString(), auth);
+			SmbFile parentSmbFolder = new SmbFile(URI.create(repoPath + "/" + parentPath + "/").normalize().toString(), authentication);
 
 			if (parentSmbFolder.isDirectory()) {
-				SmbFile testSmbFolder = new SmbFile(URI.create(repoPath + "/" + parentPath + "/" + "syncany-folder-test/").normalize().toString(), auth);
+				SmbFile testSmbFolder = new SmbFile(URI.create(repoPath + "/" + parentPath + "/" + "syncany-folder-test/").normalize().toString(), authentication);
 				testSmbFolder.mkdirs();
 				testSmbFolder.delete();
 
@@ -302,7 +351,7 @@ public class SambaTransferManager extends AbstractTransferManager {
 	@Override
 	public boolean testRepoFileExists() {
 		try {
-			SmbFile remoteRepoFile = createSmbFile(new RepoRemoteFile());
+			SmbFile remoteRepoFile = createSmbFile(new SyncanyRemoteFile());
 
 			if (remoteRepoFile.isFile()) {
 				logger.log(Level.INFO, "testRepoFileExists: Repo file exists at " + remoteRepoFile);
@@ -322,17 +371,17 @@ public class SambaTransferManager extends AbstractTransferManager {
 	private SmbFile createSmbFile(RemoteFile remoteFile) throws MalformedURLException {
 		if (remoteFile != null) {
 			return new SmbFile(URI.create(repoPath + "/" +
-				getConnection().getPath() + "/" +
+				getSettings().getPath() + "/" +
 				getRemoteFilePath(remoteFile.getClass()) + "/" +
-				remoteFile.getName()).normalize().toString(), auth);
+				remoteFile.getName()).normalize().toString(), authentication);
 		}
 		else {
-			return new SmbFile(URI.create(repoPath + "/" + getConnection().getPath()).toString(), auth);
+			return new SmbFile(URI.create(repoPath + "/" + getSettings().getPath()).toString(), authentication);
 		}
 	}
 
 	private String getRemoteFilePath(Class<? extends RemoteFile> remoteFile) {
-		if (remoteFile.equals(MultiChunkRemoteFile.class)) {
+		if (remoteFile.equals(MultichunkRemoteFile.class)) {
 			return multichunksPath;
 		}
 		else if (remoteFile.equals(DatabaseRemoteFile.class)) {
@@ -340,6 +389,12 @@ public class SambaTransferManager extends AbstractTransferManager {
 		}
 		else if (remoteFile.equals(ActionRemoteFile.class)) {
 			return actionsPath;
+		}
+		else if (remoteFile.equals(TransactionRemoteFile.class)) {
+			return transactionsPath;
+		}
+		else if (remoteFile.equals(TempRemoteFile.class)) {
+			return tempPath;
 		}
 		else {
 			return "";
