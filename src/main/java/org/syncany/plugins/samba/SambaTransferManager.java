@@ -55,18 +55,18 @@ import org.syncany.util.FileUtil;
 
 /**
  * Implements a {@link TransferManager} based on an Samba storage backend for the
- * {@link SambaPlugin}.
- * <p/>
+ * {@link SambaTransferPlugin}.
+ * 
  * <p>Using an {@link SambaTransferSettings}, the transfer manager is configured and uses
  * a well defined Samba share and folder to store the Syncany repository data. While repo and
  * master file are stored in the given folder, databases and multichunks are stored
  * in special sub-folders:
- * <p/>
+ * 
  * <ul>
  * <li>The <tt>databases</tt> folder keeps all the {@link DatabaseRemoteFile}s</li>
  * <li>The <tt>multichunks</tt> folder keeps the actual data within the {@link MultiChunkRemoteFile}s</li>
  * </ul>
- * <p/>
+ * 
  * <p>All operations are auto-connected, i.e. a connection is automatically
  * established.
  *
@@ -100,9 +100,8 @@ public class SambaTransferManager extends AbstractTransferManager {
 		}
 	}
 
-	@Override
 	public SambaTransferSettings getSettings() {
-		return (SambaTransferSettings) super.getSettings();
+		return (SambaTransferSettings) settings;
 	}
 
 	@Override
