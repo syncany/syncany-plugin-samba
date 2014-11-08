@@ -17,12 +17,9 @@
  */
 package org.syncany.plugins.samba;
 
-import java.util.Map;
-
-import org.syncany.plugins.PluginOptionSpec;
-import org.syncany.plugins.PluginOptionSpec.ValueType;
-import org.syncany.plugins.PluginOptionSpecs;
-import org.syncany.plugins.transfer.StorageException;
+import org.simpleframework.xml.Element;
+import org.syncany.plugins.transfer.Encrypted;
+import org.syncany.plugins.transfer.Setup;
 import org.syncany.plugins.transfer.TransferSettings;
 
 import com.google.common.base.Objects;
@@ -30,16 +27,31 @@ import com.google.common.base.Objects;
 /**
  * The Samba connection represents the settings required to connect to an
  * Samba-based storage backend. It can be used to initialize/create an
- * {@link SambaTransferManager} and is part of the {@link SambaPlugin}.
+ * {@link SambaTransferManager} and is part of the {@link SambaTransferPlugin}.
  *
  * @author Christian Roth <christian.roth@port17.de>
  */
 public class SambaTransferSettings extends TransferSettings {
+	@Element(name = "hostname", required = true)
+	@Setup(order = 1, description = "Hostname")
 	private String hostname;
+
+	@Element(name = "username", required = true)
+	@Setup(order = 2, description = "Username")
 	private String username;
+
+	@Element(name = "password", required = true)
+	@Setup(order = 3, sensitive = true, description = "Password")
+	@Encrypted
 	private String password;
+
+	@Element(name = "share", required = true)
+	@Setup(order = 4, description = "Name of share/folder")
 	private String share;
-	private String path;
+
+	@Element(name = "path", required = true)
+	@Setup(order = 5, description = "path")
+	private String path = "/";
 
 	public String getHostname() {
 		return hostname;
@@ -79,27 +91,6 @@ public class SambaTransferSettings extends TransferSettings {
 
 	public void setUsername(String username) {
 		this.username = username;
-	}
-
-	@Override
-	public void init(Map<String, String> optionValues) throws StorageException {
-		getOptionSpecs().validate(optionValues);
-		this.hostname = optionValues.get("hostname");
-		this.username = optionValues.get("username");
-		this.password = optionValues.get("password");
-		this.share = optionValues.get("share");
-		this.path = optionValues.get("path");
-	}
-
-	@Override
-	public PluginOptionSpecs getOptionSpecs() {
-		return new PluginOptionSpecs(
-			new PluginOptionSpec("hostname", "Hostname", ValueType.STRING, true, false, null),
-			new PluginOptionSpec("username", "Username", ValueType.STRING, true, false, null),
-			new PluginOptionSpec("password", "Password", ValueType.STRING, true, true, null),
-			new PluginOptionSpec("share", "Share", ValueType.STRING, true, false, null),
-			new PluginOptionSpec("path", "Path", ValueType.STRING, false, false, "/")
-		);
 	}
 
 	@Override

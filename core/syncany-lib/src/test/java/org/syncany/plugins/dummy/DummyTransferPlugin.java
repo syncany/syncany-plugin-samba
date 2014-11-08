@@ -15,35 +15,15 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.syncany.plugins.samba;
+package org.syncany.plugins.dummy;
 
-import org.syncany.config.Config;
-import org.syncany.plugins.Plugin;
-import org.syncany.plugins.transfer.TransferManager;
 import org.syncany.plugins.transfer.TransferPlugin;
-import org.syncany.plugins.transfer.TransferSettings;
 
 /**
- * Identifies the Samba-based storage {@link Plugin} for Syncany.
- * <p/>
- * <p>This class defines the identifier, name and
- * version of the plugin. It furthermore allows the instantiation
- * of a plugin-specific {@link SambaTransferSettings}.
- *
  * @author Christian Roth <christian.roth@port17.de>
  */
-public class SambaPlugin extends TransferPlugin {
-	public SambaPlugin() {
-		super("samba");
-	}
-
-	@Override
-	public TransferManager createTransferManager(TransferSettings connection, Config config) {
-		return new SambaTransferManager((SambaTransferSettings) connection, config);
-	}
-
-	@Override
-	public TransferSettings createSettings() {
-		return new SambaTransferSettings();
+public class DummyTransferPlugin extends TransferPlugin {
+	public DummyTransferPlugin() {
+		super("dummy");
 	}
 }
