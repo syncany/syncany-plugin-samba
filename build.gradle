@@ -9,7 +9,7 @@ configurations {
 project.ext {
 	pluginId = "samba"
 	pluginName = "Samba"
-	pluginVersion = "0.2.0-alpha"
+	pluginVersion = "0.2.1-alpha"
 	pluginDebianVersion = "1"		
 	pluginDate = new Date()
 	pluginAppMinVersion = "0.2.0-alpha"
